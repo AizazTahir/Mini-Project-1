@@ -17,13 +17,14 @@ def connect(path):
     return
 
 #aeg$sdg
-def login(id, pwd):
+def login(page, id, pwd):
     # id, pwd are StringVar()
     id_str = id.get()
     pwd_str = pwd.get()
     print("id is: " + id_str)
     print("pwd is: " + pwd_str)
     print(type(id))
+
     # Check which table(s) the id shows up in (users and artists)
     cursor.execute("""
         SELECT *
@@ -32,13 +33,33 @@ def login(id, pwd):
         AND pwd = '{}';
         """.format(id_str, pwd_str)
     )    
+    users_result = cursor.fetchone()
+    #print(users_result)
     
-    rows = cursor.fetchone()
-    print(rows)
-    
+    cursor.execute("""
+        SELECT *
+        FROM artists
+        WHERE aid = '{}'
+        AND pwd = '{}';
+        """.format(id_str, pwd_str)
+    )    
+    artists_result = cursor.fetchone()
+    #print(artists_result)
                         
     #If found in both users and artists tables, prompt user for specfic login
-    
+    if(not users_result and not artists_result):
+        # prompt user to choose user or artist
+        print("in progress")
+    # has to be user
+    elif(users_result and not artists_result):
+        print("in progress")
+    # has to be artist
+    elif(len(users_result) == 0 and len(artists_result) == 1):
+        print("in progress")
+    # incorrect password or user DNE
+    else:
+        err_msg = Label(page, text = "Invalid id or password!", font=("Arial", 10)).grid(row = 2, column = 0)
+        time.sleep(2)
     #Redirect to correct page
     return
 
@@ -65,7 +86,7 @@ def main():
     pwd = StringVar()
     pwd_entry = Entry(top, bd = 5, textvariable = pwd).grid(row = 1, column = 1)
     
-    enter = partial(login, id, pwd)
+    enter = partial(login, top, id, pwd)
 
     login_button = Button(top, text = "login", command = enter).grid(row = 4, column = 0)
     top.mainloop()
