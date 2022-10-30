@@ -1036,7 +1036,7 @@ insert into artists values ('a37', 'Flo Rida', 'American', 'uhasdf*3');
 insert into artists values ('a38', 'Spice Girls', 'British', 'uhasdf*3');
 insert into artists values ('a39', 'Ed Sheeran', 'England', 'uhasdf*3');
 --- test artist ---
-insert into artists values ('30', 'David ARtist', 'Canada', 'artist_pw');
+insert into artists values ('30', 'David ARtist', 'Canada', 'uhasdf*3');
 
 
 --- Perform ---
