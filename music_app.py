@@ -16,17 +16,20 @@ def connect(path):
     connection.commit()
     return
 
-def page_redirect(old_page, new_page):
+def page_redirect(old_page, new_page, id = None):
     old_page.destroy()
-    new_page()
+    if(id == None):
+        new_page()
+    else:
+        new_page(id)
 
-def choose_account_page():
+def choose_account_page(id):
     identify_page = Tk()
     identify_page.geometry('300x300')
     identify_page.title('Choose role to login')
 
-    goto_users_home_page = partial(page_redirect, identify_page, users_home_page)
-    goto_artists_home_page = partial(page_redirect, identify_page, artists_home_page)
+    goto_users_home_page = partial(page_redirect, identify_page, users_home_page, id)
+    goto_artists_home_page = partial(page_redirect, identify_page, artists_home_page, id)
 
     Label(identify_page, text = "Are you logging as a User or Artist?", font=("Arial", 10)).grid(row = 0, column = 1)
     Button(identify_page, text = "User", command = goto_users_home_page).grid(row = 1, column = 0)
@@ -36,16 +39,8 @@ def verify_new_user(cur_page, id, name, pwd):
     # Verify provided user id is valid and unique
     # FIX-ME: will need to catch invalid field values too. Also consider merging with login_check()
     # Currently only checks uniqueness
-    id_str = id.get()
-    name_str = name.get()
-    pwd_str = pwd.get()
     
-    cursor.execute("""
-        SELECT uid
-        FROM users
-        WHERE uid = '{}';
-        """.format(id_str)
-    )
+    cursor.execute("""SELECT uid FROM users WHERE uid = ?""", (id.get(),))
     user_result = cursor.fetchone()
     
     print("id: " + id.get())
@@ -54,6 +49,11 @@ def verify_new_user(cur_page, id, name, pwd):
 
     if(user_result):
         Label(cur_page, text = "User id already exists! Please try again.", font=("Arial", 10)).grid(row = 7, column = 1)
+        ### Using pack
+        """
+        existing_user_lb = Label(cur_page, text = "User id already exists! Please try again.", font=("Arial", 10))
+        existing_user_lb.pack(side=BOTTOM)
+        """
     else:
         # Can add to database
         add_user_query = """INSERT INTO users
@@ -62,10 +62,9 @@ def verify_new_user(cur_page, id, name, pwd):
         new_user_data = (id.get(), name.get(), pwd.get())
         cursor.execute(add_user_query, new_user_data)
         connection.commit()
-        # Redirect to users homepage
-        page_redirect(cur_page, users_home_page)
 
-    return 
+        # Redirect to users homepage
+        page_redirect(cur_page, users_home_page, id)
 
 def signup_page():
     new_member_page = Tk()
@@ -92,53 +91,56 @@ def signup_page():
     
 
 ### Users Abilities
-def start_session():
+def start_session(uid):
     print("session started")
+    print(uid.get())
 
-def search_songs_pl_page():
+def search_songs_pl_page(uid):
     #also applies for playlists
     print("search song and playlists")
 
-def search_artists_page():
+def search_artists_page(uid):
     print("search artists")
 
-def end_session():
+def end_session(uid):
     print("end_session")
 
 ### Artists Abilities
-def add_song_page():
+def add_song_page(aid):
     print("add song page for artists")
 
-def search_fans_pl_page():
+def search_fans_pl_page(aid):
     print("Search for Top 3 Fans and Playlists")
 
 ### Home pages
-def users_home_page():
+def users_home_page(uid):
     user_menu = Tk()
     user_menu.geometry('300x300')
     user_menu.title('Welcome, user.')
 
     # Actions Available to Users
-    goto_search_songs_pl = partial(page_redirect, user_menu, search_songs_pl_page)
-    goto_search_artists = partial(page_redirect, user_menu, search_artists_page)
+    start_user_session = partial(start_session, uid)
+    end_user_session = partial(end_session, uid)
+    goto_search_songs_pl = partial(page_redirect, user_menu, search_songs_pl_page, uid)
+    goto_search_artists = partial(page_redirect, user_menu, search_artists_page, uid)
     logout = partial(page_redirect, user_menu, login_page)
     
-    Button(user_menu, text = "Start a Session", command = start_session).grid(row = 1, column = 0) #No need to chage page
-    Button(user_menu, text = "End the Current Session", command = end_session).grid(row = 2, column = 0) #No need to chage page
+    Button(user_menu, text = "Start a Session", command = start_user_session).grid(row = 1, column = 0) #No need to chage page
+    Button(user_menu, text = "End the Current Session", command = end_user_session).grid(row = 2, column = 0) #No need to chage page
     Button(user_menu, text = "Search for Songs and Playlists", command = goto_search_songs_pl).grid(row = 3, column = 0)
     Button(user_menu, text = "Search for Artists", command = goto_search_artists).grid(row = 4, column = 0) 
     Button(user_menu, text = "Log Out", command = logout).grid(row = 5, column = 0)
 
     user_menu.mainloop()
 
-def artists_home_page():
+def artists_home_page(aid):
     artist_menu = Tk()
     artist_menu.geometry('300x300')
     artist_menu.title('Welcome, artist.')
 
     # Actions Available to Users
-    goto_add_songs = partial(page_redirect, artist_menu, add_song_page)
-    goto_search_fans_pl = partial(page_redirect, artist_menu, search_artists_page)
+    goto_add_songs = partial(page_redirect, artist_menu, add_song_page, aid)
+    goto_search_fans_pl = partial(page_redirect, artist_menu, search_fans_pl_page, aid)
     logout = partial(page_redirect, artist_menu, login_page)
     
     Button(artist_menu, text = "Add a new song", command = goto_add_songs).grid(row = 1, column = 0)
@@ -146,23 +148,22 @@ def artists_home_page():
     Button(artist_menu, text = "Log Out", command = logout).grid(row = 3, column = 0)
     artist_menu.mainloop()
 
-### Login Checker
+### Credentials Checker
 #aeg$sdg
 def login_check(login_screen, id, pwd):
     # id, pwd are StringVar()
     id_str = id.get()
     pwd_str = pwd.get()
-    print("id is: " + id_str)
-    print("pwd is: " + pwd_str)
+    print("id is: " + id.get())
+    print("pwd is: " + pwd.get())
     print(type(id))
 
     # Check which table(s) the id shows up in (users and artists)
     cursor.execute("""
         SELECT uid, pwd
         FROM users
-        WHERE uid = '{}'
-        AND pwd = '{}';
-        """.format(id_str, pwd_str)
+        WHERE uid = ?
+        AND pwd = ?""", (id.get(), pwd.get())
     )    
     users_result = cursor.fetchone()
     #print(users_result)
@@ -170,10 +171,9 @@ def login_check(login_screen, id, pwd):
     cursor.execute("""
         SELECT aid, pwd
         FROM artists
-        WHERE aid = '{}'
-        AND pwd = '{}';
-        """.format(id_str, pwd_str)
-    )    
+        WHERE aid = ?
+        AND pwd = ?""", (id.get(), pwd.get())
+    )
     artists_result = cursor.fetchone()
     #print(artists_result)
 
@@ -183,20 +183,17 @@ def login_check(login_screen, id, pwd):
     # has to be user
     elif(users_result and not artists_result):
         print("has to be user")
-        page_redirect(login_screen, users_home_page)
+        page_redirect(login_screen, users_home_page, id)
     # has to be artist
     elif(not users_result and artists_result):
         print("has to be artist")
-        page_redirect(login_screen, artists_home_page)
+        page_redirect(login_screen, artists_home_page, id)
     #If found in both users and artists tables, prompt user for specfic login
     else:
         #both artist and user (id: 30, pwd: uhasdf*3)
         # prompt user to choose user or artist
         print("prompt user to choose user or artist")
-        page_redirect(login_screen, choose_account_page)
-        
-    #Redirect to correct page
-    return
+        page_redirect(login_screen, choose_account_page, id)
 
 def login_page():
      #top is the login page
@@ -223,6 +220,34 @@ def login_page():
     Label(top, text = "New to the platform?").grid(row = 3, column = 0)
     Button(top, text = "Sign Up", command = goto_signup_page).grid(row = 4, column = 0)
     
+    """
+    ### using pack
+    # id
+    id_lb = Label(top, text = "ID")
+    id_lb.pack(side=LEFT)
+    id = StringVar()
+    id_etr = Entry(top, bd = 5, textvariable = id)
+    id_etr.pack(side=TOP)
+    
+    # pwd
+    pwd_lb = Label(top, text = "pwd")
+    pwd_lb.pack(side=LEFT)
+    pwd = StringVar()
+    pwd_etr = Entry(top, bd = 5, textvariable = pwd)
+    pwd_etr.pack(side=TOP)
+    
+    # login button
+    enter = partial(login_check, top, id, pwd)
+    login_button = Button(top, text = "login", command = enter)
+    login_button.pack(side=TOP)
+
+    # sign-up
+    goto_signup_page = partial(page_redirect, top, signup_page)
+    signup_lb = Label(top, text = "New to the platform?")
+    signup_lb.pack(side=LEFT)
+    signup_button = Button(top, text = "Sign Up", command = goto_signup_page)
+    signup_button.pack(side=TOP)
+    """
     top.mainloop()
 
 def main():
