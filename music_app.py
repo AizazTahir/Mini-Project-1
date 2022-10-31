@@ -16,12 +16,9 @@ def connect(path):
     connection.commit()
     return
 
-def page_redirect(old_page, new_page, id = None):
+def page_redirect(old_page, new_page, *argument):
     old_page.destroy()
-    if(id == None):
-        new_page()
-    else:
-        new_page(id)
+    new_page(*argument)
 
 def choose_account_page(id):
     identify_page = Tk()
@@ -197,58 +194,30 @@ def login_check(login_screen, id, pwd):
 
 def login_page():
      #top is the login page
-    top = Tk()
-    top.geometry('400x200')
-    top.title('Login to get started!')
+    login_portal = Tk()
+    login_portal.geometry('400x200')
+    login_portal.title('Login to get started!')
 
     # id
-    Label(top, text = "ID").grid(row = 0, column = 0)
+    Label(login_portal, text = "ID").grid(row = 0, column = 0)
     id = StringVar()
-    Entry(top, bd = 5, textvariable = id).grid(row = 0, column = 1)
+    Entry(login_portal, bd = 5, textvariable = id).grid(row = 0, column = 1)
     
     # pwd
-    Label(top, text = "pwd").grid(row = 1, column = 0)
+    Label(login_portal, text = "pwd").grid(row = 1, column = 0)
     pwd = StringVar()
-    Entry(top, bd = 5, textvariable = pwd).grid(row = 1, column = 1)
+    Entry(login_portal, bd = 5, textvariable = pwd).grid(row = 1, column = 1)
     
     # login button
-    enter = partial(login_check, top, id, pwd)
-    Button(top, text = "login", command = enter).grid(row = 2, column = 0)
+    enter = partial(login_check, login_portal, id, pwd)
+    Button(login_portal, text = "login", command = enter).grid(row = 2, column = 0)
 
     # sign-up
-    goto_signup_page = partial(page_redirect, top, signup_page)
-    Label(top, text = "New to the platform?").grid(row = 3, column = 0)
-    Button(top, text = "Sign Up", command = goto_signup_page).grid(row = 4, column = 0)
-    
-    """
-    ### using pack
-    # id
-    id_lb = Label(top, text = "ID")
-    id_lb.pack(side=LEFT)
-    id = StringVar()
-    id_etr = Entry(top, bd = 5, textvariable = id)
-    id_etr.pack(side=TOP)
-    
-    # pwd
-    pwd_lb = Label(top, text = "pwd")
-    pwd_lb.pack(side=LEFT)
-    pwd = StringVar()
-    pwd_etr = Entry(top, bd = 5, textvariable = pwd)
-    pwd_etr.pack(side=TOP)
-    
-    # login button
-    enter = partial(login_check, top, id, pwd)
-    login_button = Button(top, text = "login", command = enter)
-    login_button.pack(side=TOP)
+    goto_signup_page = partial(page_redirect, login_portal, signup_page)
+    Label(login_portal, text = "New to the platform?").grid(row = 3, column = 0)
+    Button(login_portal, text = "Sign Up", command = goto_signup_page).grid(row = 4, column = 0)
 
-    # sign-up
-    goto_signup_page = partial(page_redirect, top, signup_page)
-    signup_lb = Label(top, text = "New to the platform?")
-    signup_lb.pack(side=LEFT)
-    signup_button = Button(top, text = "Sign Up", command = goto_signup_page)
-    signup_button.pack(side=TOP)
-    """
-    top.mainloop()
+    login_portal.mainloop()
 
 def main():
     global connection, cursor
