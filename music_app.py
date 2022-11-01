@@ -126,9 +126,73 @@ def search_songs_pl_page(uid):
     Label(search_page, text = "Enter the name of the song or playlist you want to search for:").grid(row = 1, column = 0)
     search_name = StringVar()
     Entry(search_page, bd = 5, textvariable = search_name).grid(row = 2, column = 0)
+    
+    # Create a button that allows user to search for the song or playlist
+    search_songs_pl = partial(page_redirect, search_page, search_songs_pl_query, search_page, search_name, uid)
+    Button(search_page, text = "Search", command = search_songs_pl).grid(row = 3, column = 0)
+
    
+def search_songs_pl_query(cur_page, search_name, uid):
+    # Create a window that shows the results of the search
+    search_results_page = Tk()
+    search_results_page.geometry('400x300')
+    search_results_page.title('Search Results')
+    Label(search_results_page, text = "---Search Results---").grid(row = 0, column = 0)
 
+    # Search for songs and playlists that match the search name and order by the most number of keyword matches
+    #SELECT *
+    # FROM
+    # 	(
+    # 	--returns sid, title, duration, keyword_matches
+    # 	SELECT *,
+    # 		CASE WHEN s.title LIKE <'%first_word%'> THEN 1 ELSE 0 END +
+    # 		CASE WHEN s.title LIKE <'%second_word%'> THEN 1 ELSE 0 END + 
+    # 		...
+    # 		CASE WHEN s.title LIKE <'%final_word%'> THEN 1 ELSE 0 END AS keyword_matches
+    # 	FROM songs s
+    # 	WHERE s.title LIKE <'%first_word%'>
+    # 	OR s.title LIKE <'%second_word%'>
+    # 	...
+    # 	OR s.title LIKE <'%final_word%'>
 
+    # 	UNION
+        
+    # 	--returns pid, title, tot_duration, keyword_matches
+    # 	SELECT pl.pid, pl.title, SUM(s.duration) AS tot_duration,
+    # 		CASE WHEN pl.title LIKE <'%first_word%'> THEN 1 ELSE 0 END +
+    # 		CASE WHEN pl.title LIKE <'%second_word%'> THEN 1 ELSE 0 END +
+    # 		...
+    # 		CASE WHEN pl.title LIKE <'%final_word%'> THEN 1 ELSE 0 END AS keyword_matches
+    # 	FROM playlists pl, plinclude plcdl, songs s
+    # 	WHERE pl.pid = plcdl.pid AND plcdl.sid = s.sid
+    # 	AND(
+    # 	pl.title LIKE <'%first_word%'>
+    # 	OR pl.title LIKE <'%second_word%'>
+    # 	...
+    # 	OR pl.title LIKE <'%final_word%'>)
+    # 	GROUP BY pl.pid
+    # 	)
+    # ORDER BY keyword_matches DESC;
+    # convert the above sql statement to python 
+    
+ 
+    
+    # get the search name and split it into words
+    search_name = search_name.get()
+    search_words = search_name.split()
+    # Debug: print(search_words)
+    
+    
+    
+    
+    
+
+    # Add button for user to see the next 5 matches (if there are more than 5 matches)
+    # Add button for user to see the previous 5 matches (if there are more than 5 matches)
+    # Add button for user to see the details of the song or playlist
+    # Add button for user to add the song or playlist to their playlist
+    
+    
 
 def search_artists_page(uid):
     print("search artists")
@@ -143,11 +207,28 @@ def search_artists_page(uid):
     search_name = StringVar()
     Entry(search_page, bd = 5, textvariable = search_name).grid(row = 2, column = 0)
       
-    print(search_name.get())
+    # Create a button that allows user to search for the artist
+    search_artists = partial(page_redirect, search_page, search_artists_query, search_page, search_name, uid)
+    Button(search_page, text = "Search", command = search_artists).grid(row = 3, column = 0)
     
 
     search_page.mainloop()
 
+def search_artists_query(cur_page, search_name, uid):
+    # Create a window that shows the results of the search
+    search_results_page = Tk()
+    search_results_page.geometry('400x300')
+    search_results_page.title('Search Results')
+    Label(search_results_page, text = "---Search Results---").grid(row = 0, column = 0)
+
+    # Search for artists that match the search name and order by the most number of keyword matches
+
+    # Add button for user to see the next 5 matches (if there are more than 5 matches)
+    # Add button for user to see the previous 5 matches (if there are more than 5 matches)
+    # Add button for user to see the details of the artist
+    # Add button for user to add the artist to their playlist
+
+    search_results_page.mainloop()
 
 def end_session(cur_page, uid):
     print("end_session")
