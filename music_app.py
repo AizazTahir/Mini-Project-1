@@ -39,6 +39,7 @@ def verify_new_user(cur_page, id, name, pwd):
     
     cursor.execute("""SELECT uid FROM users WHERE uid = ?""", (id.get(),))
     user_result = cursor.fetchone()
+   
     
     print("id: " + id.get())
     print("name: " + name.get())
@@ -88,23 +89,161 @@ def signup_page():
     
 
 ### Users Abilities
-def start_session(uid):
+def start_session(cur_page, uid):
     print("session started")
     print(uid.get())
+    
+    # Create a unique session id and add to database
+    cursor.execute("""SELECT MAX(sno) FROM sessions""")
+    # add 1 to the max session id
+    
+    max_sno = cursor.fetchone()[0]
+    
+    if(max_sno == None):
+        max_sno = 0
+        
+    new_sno = max_sno + 1
+    # Debug: print(new_sno)
+    # add the new sid to the database with the start date as today and the end date as null
+    cursor.execute("""INSERT INTO sessions (uid, sno, start, end) VALUES (?, ?, ?, ?)""", (uid.get(), new_sno, time.strftime("%Y-%m-%d"), None))
+    
+    # add label to the page to show that the session has started
+    Label(cur_page, text = "Session started").grid(row = 1, column = 1)
+    #Label(cur_page, text = "User id already exists! Please try again.", font=("Arial", 10)).grid(row = 7, column = 1)
+    connection.commit()
+    
 
 def search_songs_pl_page(uid):
     #also applies for playlists
     print("search song and playlists")
+    # create a page for serching songs and playlists on
+    search_page = Tk()
+    search_page.geometry('400x300')
+    search_page.title('Search Songs and Playlists')
+    Label(search_page, text = "---Search Songs and Playlists---").grid(row = 0, column = 0)
+    
+    # Create a search bar that allows user to input the name of the song or playlist they want to search for
+    Label(search_page, text = "Enter the name of the song or playlist you want to search for:").grid(row = 1, column = 0)
+    search_name = StringVar()
+    Entry(search_page, bd = 5, textvariable = search_name).grid(row = 2, column = 0)
+    print(search_name.get())
+    
+    # Find the top 5 songs/playlists sorted by the most number of keyword matches in the title to the search
+
+    
+    
+    # For loop to display all of the resutls in the table
+
+
+
+
 
 def search_artists_page(uid):
     print("search artists")
+    # Create a page for searching artists on
+    search_page = Tk()
+    search_page.geometry('400x300')
+    search_page.title('Search Artists')
+    Label(search_page, text = "---Search Artists---").grid(row = 0, column = 0)
 
-def end_session(uid):
+    # Create a search bar for the user to input the name of the artist they want to search for
+    Label(search_page, text = "Enter the name of the artist you want to search for:").grid(row = 1, column = 0)
+    search_name = StringVar()
+    Entry(search_page, bd = 5, textvariable = search_name).grid(row = 2, column = 0)
+    
+    # Create a search button for the user to search for the artist
+    Button(search_page, text = "Search", command = search_name).grid(row = 3, column = 0)
+    
+    print(search_name.get())
+    
+
+    search_page.mainloop()
+
+
+def end_session(cur_page, uid):
     print("end_session")
+    # set the current session end to the current date in the database
+    cursor.execute("""SELECT MAX(sno) FROM sessions WHERE uid = ?""", (uid.get(),))
+    max_sno = cursor.fetchone()[0]
+    # debug: print(max_sno)
+    cursor.execute("""UPDATE sessions SET end = ? WHERE sno = ?""", (time.strftime("%Y-%m-%d"), max_sno))
+    
+    # Add label to the page to show that the session has ended
+    Label(cur_page, text = "Session ended").grid(row = 2, column = 1)
+    connection.commit()
+    
 
 ### Artists Abilities
 def add_song_page(aid):
     print("add song page for artists")
+    # create a add song page for artists to add songs to the database
+    add_song_page = Tk()
+    add_song_page.geometry('350x300')
+    add_song_page.title('Add Song')
+    Label(add_song_page, text = "---Add Song---").grid(row = 0, column = 0)
+
+    # Create a search bar for the user to input the name of the artist they want to search for
+    Label(add_song_page, text = "Enter the title of the song you want to add:").grid(row = 1, column = 0)
+    song_title = StringVar()
+    Entry(add_song_page, bd = 5, textvariable = song_title).grid(row = 2, column = 0)
+
+    # Create a search bar for the duration of the songs in seconds
+    Label(add_song_page, text = "Enter the duration of the song in seconds:").grid(row = 3, column = 0)
+    song_duration = StringVar()
+    Entry(add_song_page, bd = 5, textvariable = song_duration).grid(row = 4, column = 0)
+    
+    # Create a search bar for if there are any other artists on the song
+    Label(add_song_page, text = "Enter the Id of the other artists on the song:").grid(row = 5, column = 0)
+    song_artists_id = StringVar()
+    Entry(add_song_page, bd = 5, textvariable = song_artists_id).grid(row = 6, column = 0)
+    
+    # create a add song button for the user to add the song to the database
+    add_song = partial(add_song_to_db, song_title, song_duration, aid, song_artists_id, add_song_page)
+    Button(add_song_page, text = "Add Song", command = add_song).grid(row = 7, column = 0)
+
+    add_song_page.mainloop()
+
+
+
+def add_song_to_db(title, duration, aid, aid2, add_song_page):
+    print("add song to db")
+    title = title.get()
+    duration = duration.get()
+    aid = aid.get()
+    aid2 = aid2.get()
+    print(title, duration, aid, aid2)
+    
+    # make sure that the title and duration of the new song is not already in the database
+    cursor.execute("""SELECT title, duration FROM songs WHERE title = ? AND duration = ?""", (title, duration))
+    song = cursor.fetchone()
+    if(song != None):
+        Label(add_song_page, text = "Song already exists! Please try again.", font=("Arial", 10)).grid(row = 8, column = 0)
+        return
+    
+     # Create a new sid for the new song that we are going to add to the database
+    cursor.execute("""SELECT MAX(sid) FROM songs""")
+    max_sid = cursor.fetchone()[0]
+    if(max_sid == None):
+        max_sid = 0
+    new_sid = max_sid + 1
+    # Debug: print(new_sid)
+    
+    # add the new song to the database with sid title and duration
+    cursor.execute("""INSERT INTO songs (sid, title, duration) VALUES (?, ?, ?)""", (new_sid, title, duration))
+    
+    # Add the aid of the arist and the sid of the song to the perform table
+    cursor.execute("""INSERT INTO perform (aid, sid) VALUES (?, ?)""", (aid, new_sid))
+    
+    # If there are other artists on the song, add them to the perform table
+    
+    if(aid2 != ""):
+        cursor.execute("""INSERT INTO perform (aid, sid) VALUES (?, ?)""", (aid2, new_sid))
+
+    # Add label to the page to show that the song has been added
+    Label(add_song_page, text = "Song added").grid(row = 8, column = 1)
+    connection.commit()
+
+
 
 def search_fans_pl_page(aid):
     print("Search for Top 3 Fans and Playlists")
@@ -112,12 +251,12 @@ def search_fans_pl_page(aid):
 ### Home pages
 def users_home_page(uid):
     user_menu = Tk()
-    user_menu.geometry('300x300')
+    user_menu.geometry('350x300')
     user_menu.title('Welcome, user.')
 
     # Actions Available to Users
-    start_user_session = partial(start_session, uid)
-    end_user_session = partial(end_session, uid)
+    start_user_session = partial(start_session, user_menu ,uid)
+    end_user_session = partial(end_session, user_menu, uid)
     goto_search_songs_pl = partial(page_redirect, user_menu, search_songs_pl_page, uid)
     goto_search_artists = partial(page_redirect, user_menu, search_artists_page, uid)
     logout = partial(page_redirect, user_menu, login_page)
@@ -202,6 +341,7 @@ def login_page():
     Label(login_portal, text = "ID").grid(row = 0, column = 0)
     id = StringVar()
     Entry(login_portal, bd = 5, textvariable = id).grid(row = 0, column = 1)
+
     
     # pwd
     Label(login_portal, text = "pwd").grid(row = 1, column = 0)
@@ -223,7 +363,9 @@ def main():
     global connection, cursor
 
     # 1. Connect to the DB
-    path = sys.argv[1] #DB file is passed as a command line argument
+    # path = sys.argv[1] #DB file is passed as a command line argument
+    
+    path = "mini_proj_test.db" #DB file is passed as a command line argument
     connect(path)
     # Now "connection" and "cursor" are ready
 
