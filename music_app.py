@@ -126,15 +126,7 @@ def search_songs_pl_page(uid):
     Label(search_page, text = "Enter the name of the song or playlist you want to search for:").grid(row = 1, column = 0)
     search_name = StringVar()
     Entry(search_page, bd = 5, textvariable = search_name).grid(row = 2, column = 0)
-    print(search_name.get())
-    
-    # Find the top 5 songs/playlists sorted by the most number of keyword matches in the title to the search
-
-    
-    
-    # For loop to display all of the resutls in the table
-
-
+   
 
 
 
@@ -150,10 +142,7 @@ def search_artists_page(uid):
     Label(search_page, text = "Enter the name of the artist you want to search for:").grid(row = 1, column = 0)
     search_name = StringVar()
     Entry(search_page, bd = 5, textvariable = search_name).grid(row = 2, column = 0)
-    
-    # Create a search button for the user to search for the artist
-    Button(search_page, text = "Search", command = search_name).grid(row = 3, column = 0)
-    
+      
     print(search_name.get())
     
 
@@ -209,7 +198,6 @@ def add_song_page(aid):
     add_song_page.mainloop()
 
 
-
 def add_song_to_db(title, duration, aid, aid2, add_song_page):
     print("add song to db")
     title = title.get()
@@ -252,6 +240,69 @@ def add_song_to_db(title, duration, aid, aid2, add_song_page):
 
 def search_fans_pl_page(aid):
     print("Search for Top 3 Fans and Playlists")
+    # create a search fans/playlists page for artists to search for their top 3 fans and playlists
+    search_fans_pl_page = Tk()
+    search_fans_pl_page.geometry('350x300')
+    search_fans_pl_page.title('Search Fans and Playlists')
+    Label(search_fans_pl_page, text = "---Search Fans and Playlists---").grid(row = 0, column = 0)
+
+   # create a button that displays the top 3 fans of the artist by amount of time listened to
+    top_3fans = partial(top_3_fans, aid, search_fans_pl_page)
+    Button(search_fans_pl_page, text = "Top 3 Fans", command = top_3fans).grid(row = 1, column = 0)
+    
+    # create a button that displays the top 3 playlists of the artist by the amount of their songs in the playlist
+    top_3pl = partial(top_3_pl, aid, search_fans_pl_page)
+    Button(search_fans_pl_page, text = "Top 3 Playlists", command = top_3pl).grid(row = 2, column = 0)
+
+    search_fans_pl_page.mainloop()
+    
+def top_3_fans(aid, search_fans_pl_page):
+    print("top 3 fans")
+    aid = aid.get()
+    # get the top 3 fans of the artist by amount of time listened to which is determined by cnt in the listen table multipied by the duration of the song in the songs table
+    # SELECT l.uid, u.name
+    # FROM songs s, listen l, perform p, users u
+    # WHERE p.aid = <artist>
+    # AND l.sid = s.sid AND l.sid = p.sid AND l.uid = u.uid
+    # GROUP BY u.uid
+    # ORDER BY COUNT(l.cnt * s.duration)
+    # LIMIT 3;
+    # convert the above to python
+    cursor.execute("""SELECT l.uid, u.name FROM songs s, listen l, perform p, users u WHERE p.aid = ? AND l.sid = s.sid AND l.sid = p.sid AND l.uid = u.uid GROUP BY u.uid ORDER BY COUNT(l.cnt * s.duration) DESC LIMIT 3""", (aid,))
+
+    top_3_fans = cursor.fetchall()
+    # debug: print(top_3_fans)
+    # display the top 3 fans of the artist by amount of time listened to
+    #Label(search_fans_pl_page, text = "Top 3 Fans").grid(row = 3, column = 0)
+    for i in range(len(top_3_fans)):
+        Label(search_fans_pl_page, text = top_3_fans[i][0]).grid(row = 3 + i, column = 0)
+        Label(search_fans_pl_page, text = top_3_fans[i][1]).grid(row = 3 + i, column = 1)
+    
+def top_3_pl(aid, search_fans_pl_page):
+    print("top 3 playlists")
+    aid = aid.get()
+    # get the top 3 playlists of the artist by the amount of their songs in the playlist
+    #SELECT plcdl.pid, pl.title
+    # FROM playlists pl, plinclude plcdl, perform per
+    # WHERE per.aid = <artist>
+    # AND pl.pid = plcdl.pid AND plcdl.sid = per.sid
+    # GROUP BY plcdl.pid
+    # ORDER BY COUNT(plcdl.sid)
+    # LIMIT 3;
+    # Convert the above to python
+    cursor.execute("""SELECT plcdl.pid, pl.title FROM playlists pl, plinclude plcdl, perform per WHERE per.aid = ? AND pl.pid = plcdl.pid AND plcdl.sid = per.sid GROUP BY plcdl.pid ORDER BY COUNT(plcdl.sid) DESC LIMIT 3""", (aid,))
+
+
+    top_3_pl = cursor.fetchall()
+    # debug: print(top_3_pl)
+    # display the top 3 playlists of the artist by the amount of their songs in the playlist
+    Label(search_fans_pl_page, text = "Top 3 Playlists").grid(row = 2, column = 0)
+    for i in range(len(top_3_pl)):
+        Label(search_fans_pl_page, text = top_3_pl[i][0]).grid(row = 3 + i, column = 0)
+        Label(search_fans_pl_page, text = top_3_pl[i][1]).grid(row = 3 + i, column = 1)
+
+
+
 
 ### Home pages
 def users_home_page(uid):
