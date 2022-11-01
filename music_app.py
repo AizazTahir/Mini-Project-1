@@ -210,7 +210,7 @@ def add_song_to_db(title, duration, aid, aid2, add_song_page):
     cursor.execute("""SELECT title, duration FROM songs WHERE title = ? AND duration = ?""", (title, duration))
     song = cursor.fetchone()
     if(song != None):
-        Label(add_song_page, text = "Song already exists! Please try again.", font=("Arial", 10)).grid(row = 8, column = 0)
+        Label(add_song_page, text = "Song already exists! Please try again.", font=("Arial", 10)).grid(row = 10, column = 0)
         return
     
      # Create a new sid for the new song that we are going to add to the database
@@ -247,18 +247,28 @@ def search_fans_pl_page(aid):
     Label(search_fans_pl_page, text = "---Search Fans and Playlists---").grid(row = 0, column = 0)
 
    # create a button that displays the top 3 fans of the artist by amount of time listened to
-    top_3fans = partial(top_3_fans, aid, search_fans_pl_page)
+    top_3fans = partial(page_redirect, search_fans_pl_page, top_3_fans, aid)
     Button(search_fans_pl_page, text = "Top 3 Fans", command = top_3fans).grid(row = 1, column = 0)
     
     # create a button that displays the top 3 playlists of the artist by the amount of their songs in the playlist
-    top_3pl = partial(top_3_pl, aid, search_fans_pl_page)
+    top_3pl = partial(page_redirect, search_fans_pl_page, top_3_pl, aid)
     Button(search_fans_pl_page, text = "Top 3 Playlists", command = top_3pl).grid(row = 2, column = 0)
+    
+    # add button for the user to leave the menu and go back to the main page
+    goto_artists_home_page = partial(page_redirect, search_fans_pl_page, artists_home_page, aid)
+    Button(search_fans_pl_page, text = "Back", command = goto_artists_home_page).grid(row = 3, column = 0)
 
     search_fans_pl_page.mainloop()
     
-def top_3_fans(aid, search_fans_pl_page):
+def top_3_fans(aid):
     print("top 3 fans")
-    aid = aid.get()
+    
+    # Create a new window object to display the top 3 fans of the artist
+    top_3_fans_page = Tk()
+    top_3_fans_page.geometry('350x300')
+    top_3_fans_page.title('Top 3 Fans')
+    Label(top_3_fans_page, text = "---Top 3 Fans---").grid(row = 0, column = 0)
+    
     # get the top 3 fans of the artist by amount of time listened to which is determined by cnt in the listen table multipied by the duration of the song in the songs table
     # SELECT l.uid, u.name
     # FROM songs s, listen l, perform p, users u
@@ -268,19 +278,29 @@ def top_3_fans(aid, search_fans_pl_page):
     # ORDER BY COUNT(l.cnt * s.duration)
     # LIMIT 3;
     # convert the above to python
-    cursor.execute("""SELECT l.uid, u.name FROM songs s, listen l, perform p, users u WHERE p.aid = ? AND l.sid = s.sid AND l.sid = p.sid AND l.uid = u.uid GROUP BY u.uid ORDER BY COUNT(l.cnt * s.duration) DESC LIMIT 3""", (aid,))
-
+    cursor.execute("""SELECT l.uid, u.name FROM songs s, listen l, perform p, users u WHERE p.aid = ? AND l.sid = s.sid AND l.sid = p.sid AND l.uid = u.uid GROUP BY u.uid ORDER BY COUNT(l.cnt * s.duration) DESC LIMIT 3""", (aid.get(),))
     top_3_fans = cursor.fetchall()
-    # debug: print(top_3_fans)
-    # display the top 3 fans of the artist by amount of time listened to
-    #Label(search_fans_pl_page, text = "Top 3 Fans").grid(row = 3, column = 0)
+
+
+    # Display the top 3 fans in the new window
     for i in range(len(top_3_fans)):
-        Label(search_fans_pl_page, text = top_3_fans[i][0]).grid(row = 3 + i, column = 0)
-        Label(search_fans_pl_page, text = top_3_fans[i][1]).grid(row = 3 + i, column = 1)
+        Label(top_3_fans_page, text = top_3_fans[i][1]).grid(row = i + 1, column = 0)
+        
+     # add button for the user to leave the menu and go back to the main page
+    goto_search_fans_pl = partial(page_redirect, top_3_fans_page, search_fans_pl_page, aid)
+    Button(top_3_fans_page, text = "Back", command = goto_search_fans_pl).grid(row = 4, column = 0)
+    top_3_fans_page.mainloop()
+
+
     
-def top_3_pl(aid, search_fans_pl_page):
+def top_3_pl(aid):
     print("top 3 playlists")
-    aid = aid.get()
+    # Create a new window object to display the top 3 playlists of the artist
+    top_3_pl_page = Tk()
+    top_3_pl_page.geometry('350x300')
+    top_3_pl_page.title('Top 3 Playlists')
+    Label(top_3_pl_page, text = "---Top 3 Playlists---").grid(row = 0, column = 0)
+
     # get the top 3 playlists of the artist by the amount of their songs in the playlist
     #SELECT plcdl.pid, pl.title
     # FROM playlists pl, plinclude plcdl, perform per
@@ -290,17 +310,17 @@ def top_3_pl(aid, search_fans_pl_page):
     # ORDER BY COUNT(plcdl.sid)
     # LIMIT 3;
     # Convert the above to python
-    cursor.execute("""SELECT plcdl.pid, pl.title FROM playlists pl, plinclude plcdl, perform per WHERE per.aid = ? AND pl.pid = plcdl.pid AND plcdl.sid = per.sid GROUP BY plcdl.pid ORDER BY COUNT(plcdl.sid) DESC LIMIT 3""", (aid,))
-
-
+    cursor.execute("""SELECT plcdl.pid, pl.title FROM playlists pl, plinclude plcdl, perform per WHERE per.aid = ? AND pl.pid = plcdl.pid AND plcdl.sid = per.sid GROUP BY plcdl.pid ORDER BY COUNT(plcdl.sid) DESC LIMIT 3""", (aid.get(),))
     top_3_pl = cursor.fetchall()
-    # debug: print(top_3_pl)
-    # display the top 3 playlists of the artist by the amount of their songs in the playlist
-    Label(search_fans_pl_page, text = "Top 3 Playlists").grid(row = 2, column = 0)
+    
+    # display the top 3 playlists in the new window
     for i in range(len(top_3_pl)):
-        Label(search_fans_pl_page, text = top_3_pl[i][0]).grid(row = 3 + i, column = 0)
-        Label(search_fans_pl_page, text = top_3_pl[i][1]).grid(row = 3 + i, column = 1)
-
+        Label(top_3_pl_page, text = top_3_pl[i][1]).grid(row = i + 1, column = 0)
+        
+     # add button for the user to leave the menu and go back to the main page
+    goto_search_fans_pl = partial(page_redirect, top_3_pl_page, search_fans_pl_page, aid)
+    Button(top_3_pl_page, text = "Back", command = goto_search_fans_pl).grid(row = 4, column = 0)
+    top_3_pl_page.mainloop()
 
 
 
@@ -334,7 +354,8 @@ def artists_home_page(aid):
     goto_add_songs = partial(page_redirect, artist_menu, add_song_page, aid)
     goto_search_fans_pl = partial(page_redirect, artist_menu, search_fans_pl_page, aid)
     logout = partial(page_redirect, artist_menu, login_page)
-    
+    # center the following button  
+
     Button(artist_menu, text = "Add a new song", command = goto_add_songs).grid(row = 1, column = 0)
     Button(artist_menu, text = "Fans and Top Playlists", command = goto_search_fans_pl).grid(row = 2, column = 0)
     Button(artist_menu, text = "Log Out", command = logout).grid(row = 3, column = 0)
