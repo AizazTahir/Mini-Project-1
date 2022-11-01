@@ -200,6 +200,11 @@ def add_song_page(aid):
     # create a add song button for the user to add the song to the database
     add_song = partial(add_song_to_db, song_title, song_duration, aid, song_artists_id, add_song_page)
     Button(add_song_page, text = "Add Song", command = add_song).grid(row = 7, column = 0)
+    
+    # add button for the user to leave the menu and go back to the main page
+    goto_artists_home_page = partial(page_redirect, add_song_page, artists_home_page, aid)
+    Button(add_song_page, text = "Back", command = goto_artists_home_page).grid(row = 8, column = 0)
+
 
     add_song_page.mainloop()
 
