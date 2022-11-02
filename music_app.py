@@ -4,6 +4,7 @@ from tkinter import *
 from functools import partial
 import time
 import sys
+from tkinter import messagebox
 
 connection = None
 cursor = None
@@ -137,18 +138,30 @@ def playlists_info(pid, uid):
     
     playlist_info_page.mainloop()
 
-def search_results_page():
+def search_results_page(search_results, uid):
     # Create a window to display the search results
-    search_results_page = Tk()
-    search_results_page.geometry('500x300')
-    search_results_page.title('Search Results')
+    search_page = Tk()
+    search_page.geometry('500x300')
+    search_page.title('Search Results')
     
     # Display the search results
     # FIX-ME: need to get the search results from the search function
     # FIX-ME: need to display the search results in the window
+    # FIX-ME: need to add a button to each search result that allows the user to add the song to the playlist
+    
+    #  [(id, title, duration, # of matches, song/playlist), (id, title, duration, # of matches, song/playlist), ...]
+    
+   
+    # print the rows in search_results
+    for i in range(0, 5):
+        print(search_results[i])
+        print(type(search_results[i]))
+        
+
+        
     
     # Create a back button that allows the user to go back to the song select menu
-    back_song_results = partial(page_redirect, search_results_page, song_select_menu, sid)
+    back_song_results = partial(page_redirect, search_results_page, search_songs_pl_page, uid)
     Button(search_results_page, text = "Back to Song Select Menu", command = back_song_results).grid(row = 4, column = 0)
     
     search_results_page.mainloop()
@@ -173,7 +186,10 @@ def search_songs_pl_page(uid):
 
    
 def search_songs_pl_query(cur_page, search_name, uid):
+<<<<<<< HEAD
     # Create a window that shows the results of the search
+=======
+>>>>>>> Final_branch
 
     # Search for songs and playlists that match the search name and order by the most number of keyword matches
     # """SELECT MAX(sno) FROM sessions WHERE uid = ?""", (uid.get(),)
@@ -223,16 +239,20 @@ def search_songs_pl_query(cur_page, search_name, uid):
         #print(query)
         cursor.execute(query)
         search_results = cursor.fetchall()
+<<<<<<< HEAD
         for row in search_results:
             print(row)
         #return search_results
+=======
+        # call the search_page_results function to display the search results
+
+        search_results_page(search_results, uid)
+        
+        
+>>>>>>> Final_branch
         #for i in range(0, len(search_results)):
             #print(search_results[i][1])
  
-    # Add button for user to see the next 5 matches (if there are more than 5 matches)
-    # Add button for user to see the previous 5 matches (if there are more than 5 matches)
-    # Add button for user to see the details of the song or playlist
-    # Add button for user to add the song or playlist to their playlist
     
 def song_select_menu(sid, uid):
     # Create a menu where the user can perform any of these actions: (1) listen to it, 
@@ -387,7 +407,7 @@ def listento_song(sid, uid):
     if cursor.fetchone() is None:
         cursor.execute("INSERT INTO listens VALUES (%s, %s, %s, %s)", (uid.get(), sno, sid.get(), 1))
     else:
-        cursor.execute("UPDATE listens SET cnt = cnt + 1 WHERE uid = %s AND sno = %s AND sid = %s", (uid.get(), sno, sid.get()))
+        cursor.execute("UPDATE listen SET cnt = cnt + 1 WHERE uid = %s AND sno = %s AND sid = %s", (uid.get(), sno, sid.get()))
             
     # Add a button that allows the user to go back to the song select menu
     back_song_select = partial(page_redirect, listen_song_page, song_select_menu, listen_song_page, sid)
