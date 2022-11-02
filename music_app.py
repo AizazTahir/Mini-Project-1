@@ -4,6 +4,7 @@ from tkinter import *
 from functools import partial
 import time
 import sys
+from tkinter import messagebox
 
 connection = None
 cursor = None
@@ -180,19 +181,173 @@ def search_songs_pl_query(cur_page, search_name, uid):
     # get the search name and split it into words
     search_name = search_name.get()
     search_words = search_name.split()
-    # Debug: print(search_words)
+    
+def song_select_menu(sid, uid):
+    # Create a menu where the user can perform any of these actions: (1) listen to it, 
+    # (2) see more information about it, or (3) add it to a playlist.
+    song_select_page = Tk()
+    song_select_page.geometry('400x300')
+    song_select_page.title('Song Select Menu')
+    Label(song_select_page, text = "---Song Select Menu---").grid(row = 0, column = 0)
+    
+    # Add a button that allows the user to listen to the song
+    listen_song = partial(page_redirect, song_select_page, listento_song, sid, uid)
+    Button(song_select_page, text = "Listen to Song", command = listen_song).grid(row = 1, column = 0)
+    
+    # Add a button that allows the user to see more information about the song
+    more_info_song = partial(page_redirect, song_select_page, more_info_song_func, sid)
+    Button(song_select_page, text = "More Info", command = more_info_song).grid(row = 2, column = 0)
+    
+    # Add a button that allows the user to add the song to a playlist
+    add_song_pl = partial(page_redirect, song_select_page, add_song_pl_func, sid, uid)
+    Button(song_select_page, text = "Add to Playlist", command = add_song_pl).grid(row = 3, column = 0)
+    
+    # Add a button that allows the user to go back to the search results page
+    back_search_results = partial(page_redirect, song_select_page, search_songs_pl_page, song_select_page, uid)
+    Button(song_select_page, text = "Back to Search Results", command = back_search_results).grid(row = 4, column = 0)
+    
+    song_select_page.mainloop()
+
+def add_song_pl_func(sid, uid):
+    # Create a page where the user can add the song to a playlist
+    add_song_pl_page = Tk()
+    add_song_pl_page.geometry('400x300')
+    add_song_pl_page.title('Add Song to Playlist')
+    Label(add_song_pl_page, text = "---Add Song to Playlist---").grid(row = 0, column = 0)
+    
+    # Create a search bar that allows user to input the name of the playlist they want to add the song to
+    Label(add_song_pl_page, text = "Enter the name of the playlist you want to add the song to:").grid(row = 1, column = 0)
+    pl_name = StringVar()
+    Entry(add_song_pl_page, bd = 5, textvariable = pl_name).grid(row = 2, column = 0)
+    
+    # create a button that adds the song to the playlist
+    add_song_pl = partial(page_redirect, add_song_pl_page, add_song_pl_query, add_song_pl_page, pl_name, sid, uid)
+    Button(add_song_pl_page, text = "Add Song to Playlist", command = add_song_pl).grid(row = 3, column = 0)
+    
+    # Create
+    
+    add_song_pl_page.mainloop()
+    
+def add_song_pl_query(add_song_pl_page, pl_name, sid, uid):
+
+    
+    # Find the playlist that matches the given playlist name
+    cursor.execute("SELECT pid FROM playlists WHERE title = %s", (pl_name.get(),))
+    pid = cursor.fetchone()
+    
+    # If the playlist exists, add the song to the playlist
+    if pid:
+    
+        # insert into plinclude with the order as max order + 1
+        cursor.execute("SELECT MAX(sorder) FROM plinclude WHERE pid = %s", (pid[0],))
+        max_order = cursor.fetchone()
+        if max_order[0] == None:
+            cursor.execute("INSERT INTO plinclude VALUES (%s, %s, %s)", (pid[0], sid, 1))
+        else:
+            cursor.execute("INSERT INTO plinclude VALUES (%s, %s, %s)", (pid[0], sid, max_order[0] + 1))
+        
+        connection.commit()
+        # Display a successfully added message
+        messagebox.showinfo("Success", "The song was successfully added to the playlist!")
+    else:
+        # Create a new playlist with the playlist name as pl 
+        # Find the max pid and add 1 to it to get the new pid
+        cursor.execute("SELECT MAX(pid) FROM playlists")
+        max_pid = cursor.fetchone()
+        new_pid = max_pid[0] + 1
+        # Insert the song into the playlist with the uid and pid and pl from what we have
+        cursor.execute("INSERT INTO playlists VALUES (%s, %s, %s)", (new_pid, pl_name.get(), uid))
+        
+        cursor.execute("INSERT INTO plinclude VALUES (%s, %s, %s)", (new_pid, sid, 1))
+        connection.commit()
+        
+        # Display a successfully created playlist message and add the song to the playlist
+        messagebox.showinfo("Success", "The playlist was successfully created and the song was added to it!")
+        
+   
+   
+
+def more_info_song_func(sid):
+    # Create a page that shows more information about the song
+    more_info_page = Tk()
+    more_info_page.geometry('400x300') 
+    more_info_page.title('More Info')
+    Label(more_info_page, text = "---More Info---").grid(row = 0, column = 0)
+    
+    # Create a page for the user to veiw more information about the song
+    more_info_page = Tk()
+    more_info_page.geometry('400x300')
+    more_info_page.title('More Info')
+    Label(more_info_page, text = "---More Info---").grid(row = 0, column = 0)
+    
+    # display more informatoin about the song. 
+    
+    # find the song title the sid the duration and the artists who made the song
+    cursor.execute("SELECT title, duration FROM songs WHERE sid = %s", (sid.get(),))
+    song_title_duration = cursor.fetchall()
+    
+    # Find the name of the artist who made the song
+    cursor.execute("SELECT name FROM artists WHERE aid IN (SELECT aid FROM perform WHERE sid = %s)", (sid.get(),))
+    artist_names = cursor.fetchall()
+    
+    # Find the names of all of the playlists that the song is in
+    cursor.execute("SELECT title FROM playlists WHERE pid IN (SELECT pid FROM plinclude WHERE sid = %s)", (sid.get(),))
+    playlist_names = cursor.fetchall()
+    
+    # Display all of the information about the song on the page
+    Label(more_info_page, text = "Song ID: " + sid.get()).grid(row = 1, column = 0)
+    Label(more_info_page, text = "Song Title: " + song_title_duration[0][0]).grid(row = 2, column = 0)
+    Label(more_info_page, text = "Duration: " + str(song_title_duration[0][1])).grid(row = 3, column = 0)
+    Label(more_info_page, text = "Artists: " + str(artist_names)).grid(row = 4, column = 0)
+    Label(more_info_page, text = "Playlists: " + str(playlist_names)).grid(row = 5, column = 0)
+    
+    # Add a button that allows the user to go back to the song select menu
+    back_song_select = partial(page_redirect, more_info_page, song_select_menu, sid)
+    Button(more_info_page, text = "Back to Song Select Menu", command = back_song_select).grid(row = 6, column = 0)
+    
+    more_info_page.mainloop()
     
     
+def listento_song(sid, uid):
+    # Create a page that allows the user to listen to the song
+    listen_song_page = Tk()
+    listen_song_page.geometry('400x300')
+    listen_song_page.title('Listen to Song')
+    Label(listen_song_page, text = "---Listen to Song---").grid(row = 0, column = 0)
     
+    # find the current sno by finding the max sno with the given uid and write the song to the user's listening history in python
+    # only if the max sno does not have an end time (i.e. the user is still listening to the song) otherwise sno is the max sno + 1
+    cursor.execute("SELECT MAX(sno) FROM sessions WHERE uid = %s AND end IS NULL", (uid,))
+    sno = cursor.fetchone()[0]
     
+    if sno is None:
+        # find the max sno from Sessions and add 1 to it
+        cursor.execute("SELECT MAX(sno) FROM sessions")
+        sno = cursor.fetchone()[0] + 1
+        # insert the new sno into Sessions with current date and time as the start time
+        cursor.execute("""INSERT INTO sessions (uid, sno, start, end) VALUES (?, ?, ?, ?)""", (uid.get(), sno, time.strftime("%Y-%m-%d"), None))
+        # commit the changes to the database
+        connection.commit()
+        
+    # Add the song to the user's listening history if not there or update the cnt if it is there already
+    # check the uid sid and sno in the listening history    
+    cursor.execute("SELECT * FROM listening_history WHERE uid = %s AND sid = %s AND sno = %s", (uid, sid, sno))
+    
+    if cursor.fetchone() is None:
+        cursor.execute("INSERT INTO listens VALUES (%s, %s, %s, %s)", (uid.get(), sno, sid.get(), 1))
+    else:
+        cursor.execute("UPDATE listens SET cnt = cnt + 1 WHERE uid = %s AND sno = %s AND sid = %s", (uid.get(), sno, sid.get()))
+            
+    # Add a button that allows the user to go back to the song select menu
+    back_song_select = partial(page_redirect, listen_song_page, song_select_menu, listen_song_page, sid)
+    Button(listen_song_page, text = "Done listening to song", command = back_song_select).grid(row = 1, column = 0)
+    
+    connection.commit()
+    listen_song_page.mainloop()
     
 
-    # Add button for user to see the next 5 matches (if there are more than 5 matches)
-    # Add button for user to see the previous 5 matches (if there are more than 5 matches)
-    # Add button for user to see the details of the song or playlist
-    # Add button for user to add the song or playlist to their playlist
-    
-    
+
+
 
 def search_artists_page(uid):
     print("search artists")
@@ -311,7 +466,14 @@ def add_song_to_db(title, duration, aid, aid2, add_song_page):
     # If there are other artists on the song, add them to the perform table
     
     if(aid2 != ""):
-        cursor.execute("""INSERT INTO perform (aid, sid) VALUES (?, ?)""", (aid2, new_sid))
+        # split the aid2 string into a list of aid
+        aid2_list = aid2.split()
+        # Add each aid to the perform table
+        for aid2 in aid2_list: 
+            cursor.execute("""INSERT INTO perform (aid, sid) VALUES (?, ?)""", (aid2, new_sid))
+            
+            
+       
 
     # Add label to the page to show that the song has been added
     Label(add_song_page, text = "Song added").grid(row = 8, column = 1)
