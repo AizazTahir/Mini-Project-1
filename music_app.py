@@ -132,7 +132,7 @@ def playlists_info(pid, uid):
     
 
     # Create a back button that allows the user to go back to the song select menu
-    back_pl_song_results = partial(page_redirect, search_results_page, song_select_menu, sid)
+    back_pl_song_results = partial(page_redirect, playlist_info_page, song_select_menu, uid)
     Button(playlist_info_page, text = "Back to Song Select Menu", command = back_pl_song_results).grid(row = 4, column = 0)
     
     
@@ -161,10 +161,10 @@ def search_results_page(search_results, uid):
         
     
     # Create a back button that allows the user to go back to the song select menu
-    back_song_results = partial(page_redirect, search_results_page, search_songs_pl_page, uid)
-    Button(search_results_page, text = "Back to Song Select Menu", command = back_song_results).grid(row = 4, column = 0)
+    back_song_results = partial(page_redirect, search_page, search_songs_pl_page, uid)
+    Button(search_page, text = "Back to Song Select Menu", command = back_song_results).grid(row = 4, column = 0)
     
-    search_results_page.mainloop()
+    search_page.mainloop()
 
 def search_songs_pl_page(uid):
     #also applies for playlists
@@ -186,10 +186,6 @@ def search_songs_pl_page(uid):
 
    
 def search_songs_pl_query(cur_page, search_name, uid):
-<<<<<<< HEAD
-    # Create a window that shows the results of the search
-=======
->>>>>>> Final_branch
 
     # Search for songs and playlists that match the search name and order by the most number of keyword matches
     # """SELECT MAX(sno) FROM sessions WHERE uid = ?""", (uid.get(),)
@@ -222,13 +218,13 @@ def search_songs_pl_query(cur_page, search_name, uid):
         FROM
             (
             --returns sid, title, duration, key_word_matches
-            SELECT *, {}
+            SELECT *, "song" AS "type", {}
             FROM songs s WHERE {}
 
             UNION
 
             --returns pid, title, tot_duration, key_word_matches
-            SELECT pl.pid, pl.title, SUM(s.duration) AS tot_duration, {}
+            SELECT pl.pid, pl.title, SUM(s.duration) AS tot_duration, "playlist" AS "type", {}
             FROM playlists pl, plinclude plcdl, songs s
             WHERE pl.pid = plcdl.pid AND plcdl.sid = s.sid
             AND({})
@@ -239,20 +235,13 @@ def search_songs_pl_query(cur_page, search_name, uid):
         #print(query)
         cursor.execute(query)
         search_results = cursor.fetchall()
-<<<<<<< HEAD
-        for row in search_results:
-            print(row)
-        #return search_results
-=======
-        # call the search_page_results function to display the search results
-
+        
+        #for row in search_results:
+            #print(row)
+        
+        # display search results
         search_results_page(search_results, uid)
-        
-        
->>>>>>> Final_branch
-        #for i in range(0, len(search_results)):
-            #print(search_results[i][1])
- 
+
     
 def song_select_menu(sid, uid):
     # Create a menu where the user can perform any of these actions: (1) listen to it, 
@@ -438,10 +427,10 @@ def search_artists_page(uid):
 
 def search_artists_query(cur_page, search_name, uid):
     # Create a window that shows the results of the search
-    search_results_page = Tk()
-    search_results_page.geometry('400x300')
-    search_results_page.title('Search Results')
-    Label(search_results_page, text = "---Search Results---").grid(row = 0, column = 0)
+    search_artists_result_page = Tk()
+    search_artists_result_page.geometry('400x300')
+    search_artists_result_page.title('Search Results')
+    Label(search_artists_result_page, text = "---Search Results---").grid(row = 0, column = 0)
 
     # Search for artists that match the search name and order by the most number of keyword matches
 
@@ -450,7 +439,7 @@ def search_artists_query(cur_page, search_name, uid):
     # Add button for user to see the details of the artist
     # Add button for user to add the artist to their playlist
 
-    search_results_page.mainloop()
+    search_artists_result_page.mainloop()
 
 def end_session(cur_page, uid):
     print("end_session")
