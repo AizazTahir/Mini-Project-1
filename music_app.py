@@ -114,33 +114,50 @@ def start_session(cur_page, uid):
     connection.commit()
     
     
-def playlists_info(pid):
+def playlists_info(pid, uid):
     # Create a window to display the playlist information
     playlist_info_page = Tk()
     playlist_info_page.geometry('500x300')
     playlist_info_page.title('Playlist Information')
     
     
-    # Display the id, the title and the duration of all songs in the playlist where sid 
-    cursor.execute("""SELECT sid, title, duration FROM songs WHERE sid in (SELECT sid FROM plinclude plin WHERE plin.pid = ?)""", (pid.get(),))
-    songs_info = cursor.fetchall()
+    # Display the pid and the title of the playlist
+    cursor.execute("""SELECT pid, title FROM playlists WHERE pid = ?""", (pid.get(),))
+    playlist_info = cursor.fetchone()
     
-    # Display all of the song_info information to the window
-   
-    Label(playlist_info_page, text = "Song ID").grid(row = 0, column = 0)
-    Label(playlist_info_page, text = "Title").grid(row = 0, column = 1)
-    Label(playlist_info_page, text = "Duration").grid(row = 0, column = 2)
+    Label(playlist_info_page, text = "Playlist ID: " + str(playlist_info[0])).grid(row = 0, column = 0)
+    Label(playlist_info_page, text = "Playlist Title: " + playlist_info[1]).grid(row = 1, column = 0)
+    
+    # Display the total duration of the playlist
+    cursor.execute("""SELECT SUM(duration) FROM songs WHERE sid IN (SELECT sid FROM plinclude WHERE plinclude.pid = ?)""", (pid.get(),))
+    total_duration = cursor.fetchone()[0]
+    
+    Label(playlist_info_page, text = "Total Duration: " + str(total_duration)).grid(row = 2, column = 0)
+    
 
-    # Display all of the song_info information to the window
-    for i in range(len(songs_info)):
-        Label(playlist_info_page, text = songs_info[i][0]).grid(row = i + 1, column = 0)
-        Label(playlist_info_page, text = songs_info[i][1]).grid(row = i + 1, column = 1)
-        Label(playlist_info_page, text = songs_info[i][2]).grid(row = i + 1, column = 2)
+    # Create a back button that allows the user to go back to the song select menu
+    back_pl_song_results = partial(page_redirect, search_results_page, song_select_menu, sid)
+    Button(playlist_info_page, text = "Back to Song Select Menu", command = back_pl_song_results).grid(row = 4, column = 0)
+    
     
     playlist_info_page.mainloop()
     
     
+def search_results_page():
+    # Create a window to display the search results
+    search_results_page = Tk()
+    search_results_page.geometry('500x300')
+    search_results_page.title('Search Results')
     
+    # Display the search results
+    # FIX-ME: need to get the search results from the search function
+    # FIX-ME: need to display the search results in the window
+    
+    # Create a back button that allows the user to go back to the song select menu
+    back_song_results = partial(page_redirect, search_results_page, song_select_menu, sid)
+    Button(search_results_page, text = "Back to Song Select Menu", command = back_song_results).grid(row = 4, column = 0)
+    
+    search_results_page.mainloop()
 
 def search_songs_pl_page(uid):
     #also applies for playlists
