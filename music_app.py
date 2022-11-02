@@ -86,8 +86,6 @@ def signup_page():
     verify = partial(verify_new_user, new_member_page, new_id, new_name, new_pwd)
     Button(new_member_page, text = "Confirm", command = verify).grid(row = 7, column = 0)
     
-    
-
 ### Users Abilities
 def start_session(cur_page, uid):
     print("session started")
@@ -117,7 +115,6 @@ def playlists_info(pid, uid):
     playlist_info_page = Tk()
     playlist_info_page.geometry('500x300')
     playlist_info_page.title('Playlist Information')
-    
     
     # Display the pid and the title of the playlist
     cursor.execute("""SELECT pid, title FROM playlists WHERE pid = ?""", (pid.get(),))
@@ -177,10 +174,6 @@ def search_songs_pl_page(uid):
    
 def search_songs_pl_query(cur_page, search_name, uid):
     # Create a window that shows the results of the search
-    search_results_page = Tk()
-    search_results_page.geometry('400x300')
-    search_results_page.title('Search Results')
-    Label(search_results_page, text = "---Search Results---").grid(row = 0, column = 0)
 
     # Search for songs and playlists that match the search name and order by the most number of keyword matches
     # """SELECT MAX(sno) FROM sessions WHERE uid = ?""", (uid.get(),)
@@ -230,7 +223,9 @@ def search_songs_pl_query(cur_page, search_name, uid):
         #print(query)
         cursor.execute(query)
         search_results = cursor.fetchall()
-        return search_results
+        for row in search_results:
+            print(row)
+        #return search_results
         #for i in range(0, len(search_results)):
             #print(search_results[i][1])
  
@@ -581,8 +576,6 @@ def top_3_fans(aid):
     goto_search_fans_pl = partial(page_redirect, top_3_fans_page, search_fans_pl_page, aid)
     Button(top_3_fans_page, text = "Back", command = goto_search_fans_pl).grid(row = 4, column = 0)
     top_3_fans_page.mainloop()
-
-
     
 def top_3_pl(aid):
     print("top 3 playlists")
