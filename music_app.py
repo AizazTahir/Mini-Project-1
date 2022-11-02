@@ -113,6 +113,34 @@ def start_session(cur_page, uid):
     #Label(cur_page, text = "User id already exists! Please try again.", font=("Arial", 10)).grid(row = 7, column = 1)
     connection.commit()
     
+    
+def playlists_info(pid):
+    # Create a window to display the playlist information
+    playlist_info_page = Tk()
+    playlist_info_page.geometry('500x300')
+    playlist_info_page.title('Playlist Information')
+    
+    
+    # Display the id, the title and the duration of all songs in the playlist where sid 
+    cursor.execute("""SELECT sid, title, duration FROM songs WHERE sid in (SELECT sid FROM plinclude plin WHERE plin.pid = ?)""", (pid.get(),))
+    songs_info = cursor.fetchall()
+    
+    # Display all of the song_info information to the window
+   
+    Label(playlist_info_page, text = "Song ID").grid(row = 0, column = 0)
+    Label(playlist_info_page, text = "Title").grid(row = 0, column = 1)
+    Label(playlist_info_page, text = "Duration").grid(row = 0, column = 2)
+
+    # Display all of the song_info information to the window
+    for i in range(len(songs_info)):
+        Label(playlist_info_page, text = songs_info[i][0]).grid(row = i + 1, column = 0)
+        Label(playlist_info_page, text = songs_info[i][1]).grid(row = i + 1, column = 1)
+        Label(playlist_info_page, text = songs_info[i][2]).grid(row = i + 1, column = 2)
+    
+    playlist_info_page.mainloop()
+    
+    
+    
 
 def search_songs_pl_page(uid):
     #also applies for playlists
@@ -132,7 +160,6 @@ def search_songs_pl_page(uid):
     search_songs_pl = partial(page_redirect, search_page, search_songs_pl_query, search_page, search_name, uid)
     Button(search_page, text = "Search", command = search_songs_pl).grid(row = 3, column = 0)
 
-   
 def search_songs_pl_query(cur_page, search_name, uid):
     # Create a window that shows the results of the search
     search_results_page = Tk()
@@ -224,7 +251,10 @@ def add_song_pl_func(sid, uid):
     add_song_pl = partial(page_redirect, add_song_pl_page, add_song_pl_query, add_song_pl_page, pl_name, sid, uid)
     Button(add_song_pl_page, text = "Add Song to Playlist", command = add_song_pl).grid(row = 3, column = 0)
     
-    # Create
+    # Create a back button that allows the user to go back to the song select menu
+    back_song_select = partial(page_redirect, add_song_pl_page, song_select_menu, sid, uid)
+    Button(add_song_pl_page, text = "Back to Song Select Menu", command = back_song_select).grid(row = 4, column = 0)
+    
     
     add_song_pl_page.mainloop()
     
@@ -264,9 +294,6 @@ def add_song_pl_query(add_song_pl_page, pl_name, sid, uid):
         # Display a successfully created playlist message and add the song to the playlist
         messagebox.showinfo("Success", "The playlist was successfully created and the song was added to it!")
         
-   
-   
-
 def more_info_song_func(sid):
     # Create a page that shows more information about the song
     more_info_page = Tk()
