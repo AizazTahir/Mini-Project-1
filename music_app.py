@@ -140,53 +140,57 @@ def search_songs_pl_query(cur_page, search_name, uid):
     Label(search_results_page, text = "---Search Results---").grid(row = 0, column = 0)
 
     # Search for songs and playlists that match the search name and order by the most number of keyword matches
-    #SELECT *
-    # FROM
-    # 	(
-    # 	--returns sid, title, duration, keyword_matches
-    # 	SELECT *,
-    # 		CASE WHEN s.title LIKE <'%first_word%'> THEN 1 ELSE 0 END +
-    # 		CASE WHEN s.title LIKE <'%second_word%'> THEN 1 ELSE 0 END + 
-    # 		...
-    # 		CASE WHEN s.title LIKE <'%final_word%'> THEN 1 ELSE 0 END AS keyword_matches
-    # 	FROM songs s
-    # 	WHERE s.title LIKE <'%first_word%'>
-    # 	OR s.title LIKE <'%second_word%'>
-    # 	...
-    # 	OR s.title LIKE <'%final_word%'>
-
-    # 	UNION
-        
-    # 	--returns pid, title, tot_duration, keyword_matches
-    # 	SELECT pl.pid, pl.title, SUM(s.duration) AS tot_duration,
-    # 		CASE WHEN pl.title LIKE <'%first_word%'> THEN 1 ELSE 0 END +
-    # 		CASE WHEN pl.title LIKE <'%second_word%'> THEN 1 ELSE 0 END +
-    # 		...
-    # 		CASE WHEN pl.title LIKE <'%final_word%'> THEN 1 ELSE 0 END AS keyword_matches
-    # 	FROM playlists pl, plinclude plcdl, songs s
-    # 	WHERE pl.pid = plcdl.pid AND plcdl.sid = s.sid
-    # 	AND(
-    # 	pl.title LIKE <'%first_word%'>
-    # 	OR pl.title LIKE <'%second_word%'>
-    # 	...
-    # 	OR pl.title LIKE <'%final_word%'>)
-    # 	GROUP BY pl.pid
-    # 	)
-    # ORDER BY keyword_matches DESC;
-    # convert the above sql statement to python 
+    # """SELECT MAX(sno) FROM sessions WHERE uid = ?""", (uid.get(),)
     
+    # strings to be constructed as part of query
+    incre_songs = ""
+    like_songs = ""
+    incre_pl = ""
+    like_pl = ""
+
+    #input
+    key_words = search_name.get().split(' ') #separate by space
+    num_of_words = len(key_words)
+
+    #constructing strings can continue only if we have input
+    if(num_of_words != 0):
+        for i in range(0, num_of_words):
+            if(i != num_of_words-1):
+                incre_songs += ("CASE WHEN s.title LIKE \'%" + key_words[i] + "%\' THEN 1 ELSE 0 END +\n")
+            else:
+                incre_songs += ("CASE WHEN s.title LIKE \'%" + key_words[i] + "%\' THEN 1 ELSE 0 END AS key_word_matches")
+            like_songs += (" OR s.title LIKE \'%" + key_words[i] + "%\'")
+
+        incre_pl = incre_songs.replace("s.title", "pl.title" )
+        like_songs = like_songs[4:]
+        like_pl = like_songs.replace("s.title", "pl.title" )
+
+        query = """
+        SELECT *
+        FROM
+            (
+            --returns sid, title, duration, key_word_matches
+            SELECT *, {}
+            FROM songs s WHERE {}
+
+            UNION
+
+            --returns pid, title, tot_duration, key_word_matches
+            SELECT pl.pid, pl.title, SUM(s.duration) AS tot_duration, {}
+            FROM playlists pl, plinclude plcdl, songs s
+            WHERE pl.pid = plcdl.pid AND plcdl.sid = s.sid
+            AND({})
+            GROUP BY pl.pid
+            )
+        ORDER BY key_word_matches DESC;""".format(incre_songs, like_songs, incre_pl, like_pl)
+
+        #print(query)
+        cursor.execute(query)
+        search_results = cursor.fetchall()
+        return search_results
+        #for i in range(0, len(search_results)):
+            #print(search_results[i][1])
  
-    
-    # get the search name and split it into words
-    search_name = search_name.get()
-    search_words = search_name.split()
-    # Debug: print(search_words)
-    
-    
-    
-    
-    
-
     # Add button for user to see the next 5 matches (if there are more than 5 matches)
     # Add button for user to see the previous 5 matches (if there are more than 5 matches)
     # Add button for user to see the details of the song or playlist
